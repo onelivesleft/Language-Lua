@@ -1,0 +1,49 @@
+// The ui-variables file is provided by base themes provided by Atom.
+//
+// See https://github.com/atom/atom-dark-ui/blob/master/styles/ui-variables.less
+// for a full listing of what's available.
+
+@ui-size: 1rem;
+@background: @base-background-color;
+@bg2: lighten(@background, 1%);
+@import "ui-variables";
+
+@tts-height: @ui-size * 2.5;
+@panel-bg-color: darken(@background, 1%);
+@tts-panel-width: 315px;
+
+.language-lua {
+}
+
+.tts-panel-view {
+    background-color: @panel-bg-color;
+    padding-left: 2px;
+    overflow: auto;
+    width: @tts-panel-width;
+}
+
+
+.modal.overlay.from-top::before {
+  z-index: -1;
+}
+
+status-bar {
+    .status-bar-left .status-bar-function {
+        min-width: 30em;
+    }
+
+    .status-bar-left .status-bar-function-link  {
+        font-size: 1.0rem;
+        font-weight: bold;
+        padding: 0;
+        margin: 0;
+    }
+
+    .status-bar-left .status-bar-function-spacer {
+        width: 1em;
+        //padding: 0;
+        //padding-left: 0.1em;
+        //padding-right: 0.1em;
+        margin: 0;
+    }
+}

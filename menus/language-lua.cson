@@ -1,0 +1,81 @@
+# See https://atom.io/docs/latest/hacking-atom-package-word-count#menus for more details
+'context-menu':
+  'atom-text-editor': [
+    {
+      label: 'Lua',
+      submenu: [
+        {
+          'label': 'Go To Function'
+          'command': 'language-lua:gotoFunction'
+        },
+        {
+          'label': 'Jump To Cursor Function'
+          'command': 'language-lua:jumpToFunction'
+        },
+        {type: 'separator'},
+        {
+          'label': 'Display Current Function Name'
+          'command': 'language-lua:displayCurrentFunction'
+        },
+        {
+          'label': 'Select Current Function'
+          'command': 'language-lua:selectFunction'
+        },
+        {
+          'label': 'Block Expand Selection'
+          'command': 'language-lua:expandSelection'
+        },
+        {
+          'label': 'Block Retract Selection'
+          'command': 'language-lua:retractSelection'
+        },
+        {
+          'label': 'Toggle Selection Cursor Position'
+          'command': 'language-lua:toggleSelectionCursor'
+        }
+      ]
+    }
+  ]
+'menu': [
+  {
+    'label': 'Packages'
+    'submenu': [
+      'label': 'Lua'
+      'submenu': [
+        {
+          'label': 'Go To Function'
+          'command': 'language-lua:gotoFunction'
+        },
+        {
+          'label': 'Jump To Cursor Function'
+          'command': 'language-lua:jumpToFunction'
+        },
+        {
+          'label': 'Jump To Last Error'
+          'command': 'language-lua:gotoLastError'
+        },
+        {type: 'separator'},
+        {
+          'label': 'Display Current Function Name'
+          'command': 'language-lua:displayCurrentFunction'
+        },
+        {
+          'label': 'Select Current Function'
+          'command': 'language-lua:selectFunction'
+        },
+        {
+          'label': 'Block Expand Selection'
+          'command': 'language-lua:expandSelection'
+        },
+        {
+          'label': 'Block Retract Selection'
+          'command': 'language-lua:retractSelection'
+        },
+        {
+          'label': 'Toggle Selection Cursor Position'
+          'command': 'language-lua:toggleSelectionCursor'
+        }
+      ]
+    ]
+  }
+]

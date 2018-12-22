@@ -1,0 +1,40 @@
+{
+  "name": "language-lua",
+  "main": "./lib/language-lua",
+  "version": "1.0.0",
+  "description": "Lua language.",
+  "keywords": [
+    "lua"
+  ],
+  "repository": "https://github.com/onelivesleft/language-lua",
+  "license": "MIT",
+  "engines": {
+    "atom": ">=1.0.0 <2.0.0"
+  },
+  "providedServices": {
+    "autocomplete.provider": {
+      "versions": {
+        "2.0.0": "getProvider"
+      }
+    },
+    "linter": {
+      "versions": {
+        "2.0.0": "provideLinter"
+      }
+    }
+  },
+  "consumedServices": {
+    "status-bar": {
+      "versions": {
+        "^1.0.0": "consumeStatusBar"
+      }
+    }
+  },
+  "dependencies": {
+    "mkdirp": "~0.3.5",
+    "space-pen": "^5.1.1",
+    "atom-space-pen-views": "^2.0.0",
+    "luaparse": "^0.2.0",
+    "q": "^1.5.1"
+  }
+}

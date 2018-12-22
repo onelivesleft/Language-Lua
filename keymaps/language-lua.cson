@@ -1,0 +1,26 @@
+# Keybindings require three things to be fully defined: A selector that is
+# matched against the focused element, the keystroke and the command to
+# execute.
+#
+# Below is a basic keybinding which registers on all platforms by applying to
+# the root workspace element.
+
+# For more detailed documentation see
+# https://atom.io/docs/latest/behind-atom-keymaps-in-depth
+#'atom-workspace':
+#  'ctrl-alt-o': 'language-lua:toggle'
+
+#'atom-text-editor':
+
+'atom-workspace atom-text-editor:not([mini])':
+  'ctrl-g':           'language-lua:gotoFunction'
+  'ctrl-shift-g':     'language-lua:jumpToFunction'
+  'ctrl-<':           'language-lua:expandSelection'
+  'ctrl->':           'language-lua:retractSelection'
+  'ctrl-alt-<':       'language-lua:selectFunction'
+  'ctrl-alt->':       'language-lua:retractSelection'
+  'ctrl-?':           'language-lua:toggleSelectionCursor'
+  'ctrl-i':           'language-lua:displayCurrentFunction'
+
+#'atom-workspace':
+#  'ctrl-shift-|': 'language-lua:toggleTTSPanel'
