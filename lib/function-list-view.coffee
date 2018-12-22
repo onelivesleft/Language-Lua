@@ -9,12 +9,12 @@ class FunctionListView extends SelectListView
 
   initialize: (functionByName, fileMap) ->
     super
-    @addClass 'tabletopsimulator-lua-goto-function'
+    @addClass 'language-lua-goto-function'
     @editor = atom.workspace.getActiveTextEditor()
     @pane = atom.workspace.paneForItem(@editor)
     @currentRow = @editor.getCursorBufferPosition().row
     @panel = atom.workspace.addModalPanel(item: this, visible: false)
-    @showFunctionName = atom.config.get('tabletopsimulator-lua.editor.showFunctionInGoto')
+    @showFunctionName = atom.config.get('language-lua.editor.showFunctionInGoto')
     @functionByName = functionByName
     @fileMap = fileMap
     @addItems()

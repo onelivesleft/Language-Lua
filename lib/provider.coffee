@@ -1,6 +1,6 @@
 module.exports =
-  selector: '.source.tts.lua'
-  disableForSelector: '.source.tts.lua .comment'
+  selector: '.source.lua'
+  disableForSelector: '.source.lua .comment'
   filterSuggestions: true
 
   # This will take priority over the default provider, which has a priority of 0.
@@ -13,17 +13,16 @@ module.exports =
     new Promise (resolve) ->
       # Find your suggestions here
       suggestions = []
-
       # Substring up until this position
       line = editor.getTextInRange([[bufferPosition.row, 0], bufferPosition])
 
       # Hacks. Make Lua nicer.
-      if atom.config.get('tabletopsimulator-lua.hacks.incrementals') != 'off'
+      if atom.config.get('language-lua.hacks.incrementals') != 'off'
         matches = line.match(/^\s*([\w.:\[\]"'#]+)(\s*)([-+*\u002f])=(\s*)(.*)$/)
         if matches
           identifier = matches[1]
           spacing    = matches[2]
-          if spacing == '' and atom.config.get('tabletopsimulator-lua.hacks.incrementals') == 'spaced'
+          if spacing == '' and atom.config.get('language-lua.hacks.incrementals') == 'spaced'
             spacing = ' '
           operator   = matches[3]
           postfix    = matches[5]
@@ -41,9 +40,6 @@ module.exports =
       if scopeDescriptor.scopes[1] == "keyword.operator.lua" || scopeDescriptor.scopes[1] == "string.quoted.double.lua" || scopeDescriptor.scopes[1] == "string.quoted.single.lua"
         resolve([])
         return
-
-      # Are we in the global script or an object script?
-      global_script = editor.getPath().endsWith('-1.ttslua')
 
       # Split line into bracket depths
       depths = {}
@@ -132,7 +128,7 @@ module.exports =
       else if (line.includes("function") && line.endsWith(")"))
         function_name = this_token.substring(0, this_token.lastIndexOf("("))
         function_name = function_name.substring(function_name.lastIndexOf(" ") + 1)
-        function_name = function_name + atom.config.get('tabletopsimulator-lua.style.coroutinePostfix')
+        function_name = function_name + atom.config.get('language-lua.style.coroutinePostfix')
         suggestions = [
           {
             snippet: '\n\t$1\nend'

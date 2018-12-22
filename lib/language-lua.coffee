@@ -13,9 +13,6 @@ FunctionListView = require './function-list-view'
 
 
 # Store cursor positions and open editors between loads
-cursors = {}
-editors = []
-ttsEditors = {}
 globals = {}
 globals.activeEditorPath = null
 globals.count = 0
@@ -76,8 +73,8 @@ else
 
 completeFilepath = (fn, dir) ->
   filepath = fn
-  if not filepath.endsWith('.ttslua')
-    filepath += '.ttslua'
+  if not filepath.endsWith('.lua')
+    filepath += '.lua'
   if filepath.match(/^![\\/]/) # ! = configured dir for TTSLua files
     filepath = path.join(getRootPath(), filepath[2..])
   else if filepath.match(/^~[\\/]/) # ~ = home dir
@@ -127,11 +124,11 @@ extractFileMap = (text, filepath) ->
 
 
 isFromTTS = (fn) ->
-  return fn and path.dirname(fn) == ttsLuaDir
+  return true
 
 
 isGlobalScript = (fn) ->
-  return fn and path.basename(fn) == 'Global.-1.ttslua'
+  return fn and path.basename(fn) == 'Global.-1.lua'
 
 isGlobalUI = (fn) ->
   return fn and path.basename(fn) == 'Global.-1.xml'
@@ -185,7 +182,7 @@ gotoError = (message, guid) ->
     row = parseInt(row_string[1]) - 1
   luafiles = fs.readdirSync(ttsLuaDir)
   for luafile, i in luafiles
-    guid_string = luafile.match(/\.(.+)\.ttslua$/)
+    guid_string = luafile.match(/\.(.+)\.lua$/)
     if guid_string and guid_string[1] == guid #won't check .xml because of regexp
       fname = path.join(ttsLuaDir, luafile)
       break
@@ -307,7 +304,7 @@ readFilesFromTTS = (self, files, onlyOpen = false) ->
   createXML = atom.config.get('language-lua.loadSave.createXML')
   for f, i in files
     f.name = f.name.replace(/([":<>/\\|?*])/g, "")
-    basename = f.name + "." + f.guid + ".ttslua"
+    basename = f.name + "." + f.guid + ".lua"
     # write ttslua script
     @file = new FileHandler(basename)
     filepath = @file.getPath()
@@ -315,7 +312,7 @@ readFilesFromTTS = (self, files, onlyOpen = false) ->
     if atom.config.get('language-lua.loadSave.includeOtherFiles')
       text = processIncludeFiles(filepath, text)
     @file.create(text)
-    self.doCatalog(text, filepath, !isFromTTS(filepath))
+    self.doCatalog(text, filepath, true)
     mode = atom.config.get('language-lua.loadSave.communicationMode')
     if onlyOpen or mode == 'all' or (mode == 'global' and isGlobalScript(basename)) or ttsEditors[basename]
       toOpen.push(@file)
@@ -463,7 +460,7 @@ module.exports = LangageLua =
           order: 1
           description: 'This will disable the default autocomplete provider and any other providers with a lower priority; try unticking it - you might like it!'
           type: 'boolean'
-          default: true
+          default: false
     editor:
       title: 'Editor'
       order: 4
@@ -480,7 +477,7 @@ module.exports = LangageLua =
           order: 4
           description: 'Prefix all function names with the keyword \'function\' when using the Go To Function command.'
           type: 'boolean'
-          default: true
+          default: false
     developer:
       title: 'Developer'
       order: 5
@@ -582,6 +579,11 @@ module.exports = LangageLua =
 
     @verboseLogging()
 
+    for editor in atom.workspace.getTextEditors()
+      if editor.getPath().endsWith('.lua')
+        @doCatalog(editor.getText(), editor.getPath())
+
+
 
   deactivate: ->
     @ttsPanelView.dispose()
@@ -595,9 +597,9 @@ module.exports = LangageLua =
     if not atom.workspace.isTextEditor(editor)
       return
     filepath = editor.getPath()
-    if filepath and filepath.endsWith('.ttslua')
+    if filepath and filepath.endsWith('.lua')
       if not (filepath of @functionPaths)
-        @doCatalog(editor.getText(), filepath, !isFromTTS(filepath))
+        @doCatalog(editor.getText(), filepath, true)
       linterDelay = atom.config.get('language-lua.loadSave.delayLinter')
       if linterDelay > 0
         view = atom.views.getView(editor)
@@ -609,12 +611,18 @@ module.exports = LangageLua =
 
 
   onSave: (event) ->
-    if not event.path.endsWith('.ttslua')
+    if not event.path.endsWith('.lua')
       return
     for editor in atom.workspace.getTextEditors()
       if editor.getPath() == event.path
         @doCatalog(editor.getText(), event.path)
         break
+
+  onActivate: (event) ->
+    return if not event.path.endsWith('.lua')
+    editor = event.item
+    return if editor.getPath() of @functionPaths
+    @doCatalog(editor.getText(), event.path)
 
 
   onCloseTTSTabs: (event) ->
@@ -628,20 +636,19 @@ module.exports = LangageLua =
 
   doCatalog: (text, filepath, includeSiblings = false) ->
     otherFiles = @catalogFunctions(text, filepath)
-    if atom.config.get('language-lua.loadSave.includeOtherFiles')
-      if includeSiblings
-        files = fs.readdirSync(path.dirname(filepath))
-        for filename in files
-          filename = path.join(path.dirname(filepath), filename)
-          if filename.endsWith('.ttslua') and not fs.statSync(filename).isDirectory()
-            otherFiles[filename] = true
-      for otherFile of otherFiles
-        if fs.existsSync(otherFile)
-          if not (otherFile of @functionPaths)
-            a = 0
-            @catalogFileFunctions(otherFile)
-        else
-          atom.notifications.addError("Could not catalog #include - file not found:", {icon: 'type-file', detail: otherFile, dismissable: true})
+    if includeSiblings
+      files = fs.readdirSync(path.dirname(filepath))
+      for filename in files
+        filename = path.join(path.dirname(filepath), filename)
+        if filename.endsWith('.lua') and not fs.statSync(filename).isDirectory()
+          otherFiles[filename] = true
+    for otherFile of otherFiles
+      if fs.existsSync(otherFile)
+        if not (otherFile of @functionPaths)
+          a = 0
+          @catalogFileFunctions(otherFile)
+      else
+        atom.notifications.addError("Could not catalog #include - file not found:", {icon: 'type-file', detail: otherFile, dismissable: true})
 
 
   cursorChangeEvent: (event) ->
@@ -651,7 +658,7 @@ module.exports = LangageLua =
       editor = event.cursor.editor
       if editor
         filepath = editor.getPath()
-        isTTS = filepath and filepath.endsWith('.ttslua')
+        isTTS = filepath and filepath.endsWith('.lua')
       else
         isTTS = false
       if @luaStatusBarActive
@@ -945,7 +952,7 @@ module.exports = LangageLua =
           for luafile,i in @luafiles
             fname = path.join(ttsLuaDir, luafile)
             if not fs.statSync(fname).isDirectory()
-              if fname.endsWith(".ttslua")
+              if fname.endsWith(".lua")
                 @luaObject = {}
                 tokens = luafile.split "."
                 @luaObject.name = luafile
@@ -1049,7 +1056,7 @@ module.exports = LangageLua =
 
   displayFunction: ->
     editor = atom.workspace.getActiveTextEditor()
-    if not editor or not editor.getPath().endsWith('.ttslua')
+    if not editor or not editor.getPath().endsWith('.lua')
       return
     row = editor.getCursorBufferPosition().row
     [names, rows] = @getFunctions(editor, row)
@@ -1100,55 +1107,26 @@ module.exports = LangageLua =
 
 
   catalogFunctions: (text, filepath, root = null) ->
+    console.log("Cataloging " + filepath)
     @functionPaths[filepath] = {}
     otherFiles = {}
     stack = []
     lines = text.split(/\n/)
     closingTag = []
-    if not isFromTTS(filepath) and root == null
+    if root == null
       root = path.dirname(filepath)
-    if atom.config.get('language-lua.loadSave.includeOtherFiles')
-      for line, row in lines
-        if stack.length == 0
-          dir = root
-        else
-          dir = path.dirname(stack[stack.length-1])
-        insert = line.match(insertFileRegexp)
-        if insert
-          label = completeFilepath(insert[2], dir)
-          otherFiles[label] = true
-        else
-          inserted = line.match(insertedFileRegexp)
-          if inserted
-            label = completeFilepath(inserted[2], dir)
-            if closingTag.length > 0 and inserted[2] == closingTag[closingTag.length - 1]
-              stack.pop()
-              closingTag.pop()
-            else #opening marker
-              if not (label of @functionPaths)
-                otherFiles[label] = true
-              stack.push(label)
-              closingTag.push(inserted[2])
-          else
-            if not stack.length
-              m = line.match(/^\s*function\s+([^\s\(]+)\s*\(([^\)]*)\)/)
-              if m
-                functionDescription = {functionName: m[1], parameters: m[2], line: row, filepath: filepath}
-                @functionByName[functionDescription.functionName] = functionDescription
-                @functionPaths[filepath][functionDescription.functionName] = row
-    else
-      for line, row in lines
-        m = line.match(/^\s*function\s+([^\s\(]+)\s*\(([^\)]*)\)/)
-        if m
-          functionDescription = {functionName: m[1], parameters: m[2], line: row, filepath: filepath}
-          @functionByName[functionDescription.functionName] = functionDescription
-          @functionPaths[filepath][functionDescription.functionName] = row
+    for line, row in lines
+      m = line.match(/^\s*(local\s*)?function\s+([^\s\(]+)\s*\(([^\)]*)\)/)
+      if m
+        functionDescription = {functionName: m[2], parameters: m[3], line: row, filepath: filepath}
+        @functionByName[functionDescription.functionName] = functionDescription
+        @functionPaths[filepath][functionDescription.functionName] = row
     return otherFiles
 
 
   jumpToCursorFunction: ->
     editor = atom.workspace.getActiveTextEditor()
-    if not editor or not editor.getPath().endsWith(".ttslua")
+    if not editor or not editor.getPath().endsWith(".lua")
       return
     function_name = editor.getWordUnderCursor()
     if not function_name
@@ -1180,7 +1158,7 @@ module.exports = LangageLua =
     editor = atom.workspace.getActiveTextEditor()
     return if not editor
     filepath = editor.getPath()
-    return if not (filepath.endsWith(".ttslua") and isFromTTS(filepath))
+    return if not (filepath.endsWith(".lua") and isFromTTS(filepath))
     filepath = filepath.substring(0, filepath.length - 7) + '.xml'
 
     if not fs.existsSync(filepath)
@@ -1206,7 +1184,7 @@ module.exports = LangageLua =
 
   selectCurrentFunction: ->
     editor = atom.workspace.getActiveTextEditor()
-    if not editor or not editor.getPath().endsWith(".ttslua")
+    if not editor or not editor.getPath().endsWith(".lua")
       return
     pos = editor.getCursorBufferPosition()
     row = pos.row
@@ -1250,7 +1228,7 @@ module.exports = LangageLua =
 
   expandSelection: ->
     editor = atom.workspace.getActiveTextEditor()
-    if not editor or not editor.getPath().endsWith(".ttslua")
+    if not editor or not editor.getPath().endsWith(".lua")
       return
     cursor = editor.getLastCursor()
     pos = cursor.getBufferPosition()
@@ -1350,7 +1328,7 @@ module.exports = LangageLua =
 
   retractSelection: ->
     editor = atom.workspace.getActiveTextEditor()
-    if not editor or not editor.getPath().endsWith(".ttslua") or not @isBlockSelecting
+    if not editor or not editor.getPath().endsWith(".lua") or not @isBlockSelecting
       return
     if @blockSelectStack and @blockSelectStack.length > 0
       [@blockSelectTop, @blockSelectBottom, @blockSelectIndent] = @blockSelectStack.pop()
@@ -1368,7 +1346,7 @@ module.exports = LangageLua =
 
   toggleCursorSelectionEnd: ->
     editor = atom.workspace.getActiveTextEditor()
-    if not editor or not editor.getPath().endsWith(".ttslua")
+    if not editor or not editor.getPath().endsWith(".lua")
       return
     selected = editor.getSelectedBufferRange()
     if selected
